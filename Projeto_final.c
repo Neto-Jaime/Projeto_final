@@ -6,7 +6,6 @@
 #include "include/font.h"
 #include "hardware/pwm.h"
 
-
 // Definição de pinos e endereços
 #define POTENCIOMETRO 26   // Pino ADC para simular o LDR
 #define LED_PWM 13         // Pino do LED controlado por PWM
@@ -20,6 +19,7 @@
 ssd1306_t display;
 
 bool tarefa_luminancia_ativa = false;
+int opcao_menu = 0;  // 0 = LUMINOSIDADE, 1 = SAIR
 
 void configurar_pwm(uint pino) {
     gpio_set_function(pino, GPIO_FUNC_PWM);
@@ -47,13 +47,21 @@ void configurar_display() {
 
 void exibir_menu() {
     ssd1306_fill(&display, false);
+
+    // Desenha o título
     ssd1306_draw_string(&display, "MENU", 50, 5);
+
+    // Desenha as opções do menu
     ssd1306_draw_string(&display, "1 LUMINOSIDADE", 10, 20);
     ssd1306_draw_string(&display, "2 SAIR", 10, 40);
+
+    // Desenha a faixa branca para o item selecionado
+    int faixa_y = 20 + opcao_menu * 20;  // 20 pixels de altura entre cada opção
+    ssd1306_rect(&display, faixa_y, 10, 110, 15, true, false);  // Faixa branca
     ssd1306_send_data(&display);
 }
 
-void exibir_luminosidade(int valor_simulado, int brilho, int valor_adc) {
+void exibir_luminosidade(int brilho, int valor_adc) {
     char buffer[50];
     int luminosidade = (valor_adc * 100) / 4095;
 
@@ -81,9 +89,17 @@ void configurar_botoes() {
 }
 
 bool verificar_entrada() {
-    if (gpio_get(TECLA_A) == 0) {
+    static uint32_t ultima_entrada = 0;
+    uint32_t tempo_atual = to_ms_since_boot(get_absolute_time());
+
+    // Verifica se a tecla A foi pressionada com debounce
+    if (gpio_get(TECLA_A) == 0 && tempo_atual - ultima_entrada > 200) {
+        ultima_entrada = tempo_atual;
         return true;  // Tarefa de controle de luminosidade selecionada
-    } else if (gpio_get(TECLA_B) == 0) {
+    }
+    // Verifica se a tecla B foi pressionada com debounce
+    if (gpio_get(TECLA_B) == 0 && tempo_atual - ultima_entrada > 200) {
+        ultima_entrada = tempo_atual;
         return false; // Sair do menu
     }
     return false; // Nenhuma tecla pressionada
@@ -99,24 +115,34 @@ int main() {
     exibir_menu(); // Exibe o menu inicial
 
     while (1) {
+        int leitura_adc = adc_read();  // Lê o valor do potenciômetro
+        opcao_menu = (leitura_adc * 2) / 4095;  // Calcula qual opção do menu deve ser selecionada
+
+        exibir_menu(); // Exibe o menu atualizado
+
         if (verificar_entrada()) {
-            tarefa_luminancia_ativa = true;
-            while (tarefa_luminancia_ativa) {
-                int leitura_adc = adc_read();  // Lê o valor do potenciômetro
-                int brilho = 255 - (leitura_adc * 255 / 4095);  // Converte para PWM (0-255), ajustando para brilho inverso
+            if (opcao_menu == 0) {
+                tarefa_luminancia_ativa = true;
+                while (tarefa_luminancia_ativa) {
+                    int leitura_adc = adc_read();  // Lê o valor do potenciômetro
+                    int brilho = 255 - (leitura_adc * 255 / 4095);  // Converte para PWM (0-255), ajustando para brilho inverso
 
-                pwm_set_gpio_level(LED_PWM, brilho); // Ajusta o brilho do LED baseado no valor do potenciômetro
-                exibir_luminosidade(brilho, brilho, leitura_adc); // Exibe no display a luminosidade simulada, o brilho e o valor do ADC
-                debug_uart(leitura_adc, brilho); // Exibe o debug via UART
+                    pwm_set_gpio_level(LED_PWM, brilho); // Ajusta o brilho do LED baseado no valor do potenciômetro
+                    exibir_luminosidade(brilho, leitura_adc); // Exibe no display a luminosidade simulada, o brilho e o valor do ADC
+                    debug_uart(leitura_adc, brilho); // Exibe o debug via UART
 
-                if (verificar_entrada()) {
-                    tarefa_luminancia_ativa = false;  // Sai do controle de luminosidade
-                    exibir_menu(); // Exibe o menu novamente
+                    if (verificar_entrada()) {
+                        tarefa_luminancia_ativa = false;  // Sai do controle de luminosidade
+                        exibir_menu(); // Exibe o menu novamente
+                    }
+
+                    sleep_ms(100); // Aguarda 100ms antes de atualizar
                 }
-
-                sleep_ms(100); // Aguarda 100ms antes de atualizar
+            } else if (opcao_menu == 1) {
+                // Implementar a lógica de sair do menu, se necessário
             }
         }
+
         sleep_ms(100); // Aguarda 100ms antes de verificar novamente
     }
 }
