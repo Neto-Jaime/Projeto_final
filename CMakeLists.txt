@@ -54,7 +54,7 @@ target_include_directories(Projeto_final PRIVATE
 )
 
 # Add any user requested libraries
-target_link_libraries(Projeto_final pico_stdlib hardware_i2c hardware_adc hardware_pwm
+target_link_libraries(Projeto_final pico_stdlib hardware_i2c hardware_adc hardware_pwm 
         
         )
 

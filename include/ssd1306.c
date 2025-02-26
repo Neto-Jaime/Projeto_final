@@ -153,6 +153,30 @@ void ssd1306_vline(ssd1306_t *ssd, uint8_t x, uint8_t y0, uint8_t y1, bool value
     ssd1306_pixel(ssd, x, y, value);
 }
 
+
+void ssd1306_draw_string_inverted(ssd1306_t *disp, const char *str, int x, int y) {
+  int orig_x = x;
+
+  while (*str) {
+      if (*str == '\n') {
+          x = orig_x;
+          y += 8;
+      } else if (*str >= 32 && *str <= 126) {
+          // Largura do texto
+          int char_width = 6;
+          
+          // Desenha um retângulo preto para cobrir o fundo do texto
+          ssd1306_rect(disp, x - 1, y - 1, char_width + 1, 8, true, true);
+
+          // Desenha o texto normal (mas agora com o fundo preto)
+          ssd1306_draw_char(disp, *str, x, y);
+
+          x += char_width;
+      }
+      str++;
+  }
+}
+
 // Função para desenhar um caractere
 void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y)
 {
