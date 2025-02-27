@@ -1,5 +1,10 @@
 # Monitor de Luminosidade e Ruído com Raspberry Pi Pico  
 
+# Nome: Jaime Neto
+# Grupo: 0
+# Matrícula: TIC370100555
+# Link video: https://drive.google.com/drive/folders/1xaHx48UsbjKAB2AsoX2wA1n-CXL7Ic3y?usp=sharing
+
 Este projeto implementa um sistema de monitoramento de **luminosidade** e **nível de ruído** utilizando um **Raspberry Pi Pico**. O usuário pode alternar entre os modos de operação utilizando botões físicos, e os dados são exibidos em um display **OLED SSD1306** via **I2C**. O sistema também possui um **buzzer** para alertas de ruído alto.
 
 ---
