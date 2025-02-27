@@ -162,20 +162,24 @@ void ssd1306_draw_string_inverted(ssd1306_t *disp, const char *str, int x, int y
           x = orig_x;
           y += 8;
       } else if (*str >= 32 && *str <= 126) {
-          // Largura do texto
+          // Largura do texto (6px por caractere)
           int char_width = 6;
-          
-          // Desenha um retângulo preto para cobrir o fundo do texto
-          ssd1306_rect(disp, x - 1, y - 1, char_width + 1, 8, true, true);
 
-          // Desenha o texto normal (mas agora com o fundo preto)
+          // Desenha um fundo preto exato para inverter o texto
+          ssd1306_rect(disp, x, y, char_width, 8, true, true);
+
+          // Desenha o texto na frente do fundo preto
           ssd1306_draw_char(disp, *str, x, y);
 
-          x += char_width;
+          x += char_width; // Move para a próxima posição do caractere
       }
       str++;
   }
+
+  // Atualiza o display para garantir que a mudança apareça
+  ssd1306_send_data(disp);
 }
+
 
 // Função para desenhar um caractere
 void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y)
